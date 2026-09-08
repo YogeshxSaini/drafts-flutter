@@ -6,14 +6,14 @@ import { app } from '../state/appStore';
 import { wipeLocalDatabase } from './auth';
 
 const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL as string | undefined) ?? '';
-const SUPABASE_ANON_KEY = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ?? '';
+const SUPABASE_PUBLISHABLE_KEY = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined) ?? '';
 
-const transport = SUPABASE_URL && SUPABASE_ANON_KEY ? null : new FakeRemote({ heartbeat: true });
+const transport = SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY ? null : new FakeRemote({ heartbeat: true });
 
 let activeTransport: ReturnType<typeof getTransport>;
 function getTransport(userId: string) {
-  if (SUPABASE_URL && SUPABASE_ANON_KEY) {
-    return new SupabaseTransport({ url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY, userId });
+  if (SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY) {
+    return new SupabaseTransport({ url: SUPABASE_URL, anonKey: SUPABASE_PUBLISHABLE_KEY, userId });
   }
   return transport!;
 }
@@ -30,12 +30,12 @@ export const engine = new SyncEngine({
   }
 });
 
-if (SUPABASE_URL && SUPABASE_ANON_KEY) {
-  configureAuth({ url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY });
+if (SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY) {
+  configureAuth({ url: SUPABASE_URL, anonKey: SUPABASE_PUBLISHABLE_KEY });
 }
 
 export async function bootSync(): Promise<void> {
-  if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+  if (SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY) {
     await initAuth();
     onAuthChange((s) => {
       if (s.status === 'signed-in') {
