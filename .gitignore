@@ -1,0 +1,21 @@
+# Build artifacts
+dist/
+dist-ssr/
+*.local
+
+# Dependencies
+node_modules/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test
+coverage/
+.vitest-cache/

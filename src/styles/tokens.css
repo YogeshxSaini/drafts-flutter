@@ -1,0 +1,128 @@
+:root {
+  color-scheme: light dark;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  --font-serif: 'Iowan Old Style', 'Apple Garamond', Georgia, 'Times New Roman', serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 6px 24px rgba(0, 0, 0, 0.08);
+  --transition: 140ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+:root[data-theme='light'] {
+  --bg: #faf9f6;
+  --bg-elev: #ffffff;
+  --bg-sunken: #f3f1ec;
+  --bg-hover: #f0eee8;
+  --bg-active: #e8e5dd;
+  --fg: #1f1d1b;
+  --fg-muted: #6a655e;
+  --fg-subtle: #9a948a;
+  --border: #e6e1d8;
+  --border-strong: #d3cdc1;
+  --accent: #b85c38;
+  --accent-soft: #f3d9c9;
+  --accent-fg: #ffffff;
+  --danger: #b04040;
+  --danger-soft: #f3d6d6;
+  --success: #4f7a4a;
+  --tag-bg: #ece8df;
+  --tag-fg: #4a443c;
+  --selection: #f1d6c1;
+}
+
+:root[data-theme='dark'] {
+  --bg: #161514;
+  --bg-elev: #1d1c1a;
+  --bg-sunken: #111110;
+  --bg-hover: #25231f;
+  --bg-active: #2e2b27;
+  --fg: #ece8df;
+  --fg-muted: #a39c8f;
+  --fg-subtle: #6f6a62;
+  --border: #2a2825;
+  --border-strong: #3a3833;
+  --accent: #d97757;
+  --accent-soft: #3a2419;
+  --accent-fg: #161514;
+  --danger: #d97a7a;
+  --danger-soft: #3a1f1f;
+  --success: #8ab487;
+  --tag-bg: #2a2825;
+  --tag-fg: #c4beb1;
+  --selection: #5c3a25;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --transition: 0ms;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--fg);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--selection);
+  color: var(--fg);
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+input,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+input:focus-visible,
+textarea:focus-visible,
+button:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 12px 0;
+}
