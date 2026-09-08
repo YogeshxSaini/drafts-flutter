@@ -52,7 +52,7 @@ export async function initAuth(): Promise<void> {
     const sb = await getSupabase();
     const auth = sb.auth as {
       getSession: () => Promise<{ data: { session: { user: { id: string; email: string | null } } | null } }>;
-      onAuthStateChange: (cb: (event: string, session: { user: { id: string; email: string | null } } | null } | null) => void) => { data: { subscription: { unsubscribe: () => void } } };
+      onAuthStateChange: (cb: (event: string, session: { user: { id: string; email: string | null } } | null) => void) => { data: { subscription: { unsubscribe: () => void } } };
       signInWithPassword: (creds: { email: string; password: string }) => Promise<{ error: { message: string } | null }>;
       signInWithOAuth: (opts: { provider: 'google' | 'apple' | 'github' }) => Promise<{ error: { message: string } | null }>;
       signOut: () => Promise<{ error: { message: string } | null }>;

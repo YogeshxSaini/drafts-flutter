@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { app } from '../state/appStore';
-import { noteRepository } from '../data/wrappedNoteRepository';
+import { wrappedNoteRepository } from '../data/wrappedNoteRepository';
 import { debounce } from '../domain/utils';
 import { IconBold, IconCode, IconHeading, IconItalic, IconLink, IconList, IconChecklist, IconQuote, IconPlus, IconPin, IconArchive, IconTrash, IconMore, IconUnarchive } from './icons';
 import { useOnClickOutside } from './useOnClickOutside';
@@ -45,7 +45,7 @@ export function NoteEditor({ id, onDelete, onArchive, onUnarchive, onRestore, on
   const persist = debounce(async (next: { title: string; content: string; tags: string[] }) => {
     setSaving(true);
     try {
-      await noteRepository.update(id, next);
+      await wrappedNoteRepository.update(id, next);
       setSavedAt(Date.now());
       void app.getState().refresh();
     } catch (err) {

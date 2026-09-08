@@ -1,10 +1,10 @@
-import type { Note } from '../domain/types';
+import type { Note, NoteFieldKey, FieldVersions } from '../domain/types';
 import type { OutboxOp } from './outbox';
 
 export interface RemoteRow {
   id: string;
   note: Note;
-  fieldVersions: Note['fieldVersions'];
+  fieldVersions: FieldVersions;
   tombstone: boolean;
   updatedAt: number;
 }
@@ -20,3 +20,5 @@ export interface SyncTransport {
   subscribe(onChange: (row: RemoteRow) => void): () => void;
   heartbeat(): Promise<boolean>;
 }
+
+export type { NoteFieldKey, FieldVersions };

@@ -1,9 +1,9 @@
-import { db } from '../data/db';
+import { db, type OutboxRow } from '../data/db';
 import type { Note, FieldVersions, NoteFieldKey } from '../domain/types';
-import { mergeLocalAndRemote, type RemoteRow } from './merge';
-import type { SyncTransport, PushResult } from './transport';
+import { mergeLocalAndRemote } from './merge';
+import type { RemoteRow, SyncTransport, PushResult } from './transport';
 import { setSyncState, setSyncPending, markSynced, setSyncError } from './status';
-import type { OutboxOp, OutboxRow } from './outbox';
+import type { OutboxOp } from './outbox';
 import { now } from '../domain/utils';
 
 const CURSOR_PREFIX = 'sync_cursor_';
@@ -171,7 +171,7 @@ export class SyncEngine {
       const delay = backoffMs(attempts);
       setTimeout(() => {
         void this.syncNow();
-      }, delay).unref?.();
+      }, delay);
     }
   }
 

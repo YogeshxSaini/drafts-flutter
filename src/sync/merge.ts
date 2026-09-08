@@ -1,12 +1,8 @@
 import type { Note, NoteFieldKey, FieldVersions } from '../domain/types';
 import { noteVersion } from '../domain/types';
+import type { RemoteRow } from './transport';
 
-export interface RemoteRow {
-  id: string;
-  note: Note;
-  fieldVersions: FieldVersions;
-  tombstone: boolean;
-}
+export type { RemoteRow };
 
 export interface MergeResult {
   next: Note | null;

@@ -5,7 +5,13 @@ import type { ID, NoteFieldKey, FieldVersions } from '../domain/types';
 export type OpId = string;
 
 export type OutboxOp =
-  | { kind: 'create'; noteId: ID; clientTimestamp: number; fieldVersions: FieldVersions }
+  | {
+      kind: 'create';
+      noteId: ID;
+      clientTimestamp: number;
+      fieldVersions: FieldVersions;
+      fields: { title: string; content: string; tags: string[]; createdAt: number };
+    }
   | {
       kind: 'update';
       noteId: ID;

@@ -21,10 +21,16 @@ interface SupabaseLike {
     delete: () => { eq: (col: string, val: string) => Promise<{ error: { message: string } | null }> };
   };
   channel: (name: string) => {
-    on: (kind: 'postgres_changes', opts: unknown, cb: (payload: { new: ServerRow; old: ServerRow }) => void) => unknown;
+    on: (
+      kind: 'postgres_changes',
+      opts: unknown,
+      cb: (payload: { new: ServerRow; old: ServerRow }) => void
+    ) => {
+      subscribe: () => { data?: { subscription?: { unsubscribe: () => void } } } | unknown;
+    };
     subscribe: () => unknown;
   };
-  removeChannel: (ch: unknown) => void;
+  removeChannel: (ch: unknown) => unknown;
 }
 
 interface ServerRow {
@@ -44,21 +50,20 @@ interface ServerRow {
   tombstone: boolean;
 }
 
-function toServerRow(op: OutboxOp, opId: string, userId: string): Record<string, unknown> | null {
-  const base = { id: opId, user_id: userId, created_at: op.clientTimestamp };
+function toServerRow(op: OutboxOp, userId: string): Record<string, unknown> | null {
   switch (op.kind) {
     case 'create':
       return {
-        ...base,
         id: op.noteId,
-        title: '',
-        content: '',
-        tags: [],
+        user_id: userId,
+        title: op.fields.title,
+        content: op.fields.content,
+        tags: op.fields.tags,
         is_pinned: false,
         is_archived: false,
         is_deleted: false,
         deleted_at: null,
-        created_at: op.clientTimestamp,
+        created_at: op.fields.createdAt,
         updated_at: op.clientTimestamp,
         field_versions: op.fieldVersions,
         version: 0,
@@ -140,7 +145,7 @@ export class SupabaseTransport implements SyncTransport {
   private async getClient(): Promise<SupabaseLike> {
     if (this.client) return this.client;
     const mod = await import('@supabase/supabase-js');
-    const create = (mod as { createClient: (url: string, key: string) => SupabaseLike }).createClient;
+    const create = (mod as unknown as { createClient: (url: string, key: string) => SupabaseLike }).createClient;
     this.client = create(this.config.url, this.config.anonKey);
     return this.client;
   }
@@ -180,7 +185,7 @@ export class SupabaseTransport implements SyncTransport {
         }
         return { ok: true };
       }
-      const serverRow = toServerRow(op, opId, this.config.userId);
+      const serverRow = toServerRow(op, this.config.userId);
       if (!serverRow) return { ok: true };
       const { error } = await client.from('notes').upsert([serverRow]);
       if (error) return { ok: false, error: error.message };
@@ -238,7 +243,7 @@ export class SupabaseTransport implements SyncTransport {
   async heartbeat(): Promise<boolean> {
     try {
       const client = await this.getClient();
-      const probe = await client.from('notes').select('id').gt('id', '').order('id', { ascending: true }).limit(1);
+      const probe = await client.from('notes').select('id').gt('updated_at', 0).order('updated_at', { ascending: true }).limit(1);
       return !probe.error;
     } catch {
       return false;

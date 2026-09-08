@@ -42,10 +42,10 @@ export class FakeRemote implements SyncTransport {
       case 'create': {
         const note: Note = {
           id: op.noteId,
-          title: '',
-          content: '',
-          tags: [],
-          createdAt: op.clientTimestamp,
+          title: op.fields.title,
+          content: op.fields.content,
+          tags: op.fields.tags,
+          createdAt: op.fields.createdAt,
           updatedAt: op.clientTimestamp,
           isPinned: false,
           isArchived: false,

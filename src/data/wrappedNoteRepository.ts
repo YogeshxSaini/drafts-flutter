@@ -35,8 +35,6 @@ async function syncTagCounts(changedTags: string[]): Promise<void> {
 
 function enqueue(op: OutboxOp) {
   const row = makeOutboxRow(op);
-  // Dexie exposes a tx-scoped `db.outbox` when called inside a `db.transaction` callback.
-  // We write via the table accessor so the row participates in the same transaction.
   void db.outbox.add(row);
 }
 
@@ -44,6 +42,7 @@ export const wrappedNoteRepository = {
   async create(draft: NoteDraft = { title: '', content: '', tags: [] }): Promise<Note> {
     const t = now();
     const id = generateId();
+    const fv: FieldVersions = { title: 1, content: 1, tags: 1 };
     const note: Note = {
       id,
       title: draft.title,
@@ -55,17 +54,16 @@ export const wrappedNoteRepository = {
       isArchived: false,
       isDeleted: false,
       deletedAt: null,
-      fieldVersions: {}
+      fieldVersions: fv
     };
-    const fv: FieldVersions = { title: 1, content: 1, tags: 1, createdAt: 1, updatedAt: 1 };
-    note.fieldVersions = fv;
     await db.transaction('rw', db.notes, db.tags, db.outbox, async () => {
       await db.notes.put(note);
       enqueue({
         kind: 'create',
         noteId: id,
         clientTimestamp: t,
-        fieldVersions: fv
+        fieldVersions: fv,
+        fields: { title: note.title, content: note.content, tags: note.tags, createdAt: t }
       });
     });
     await syncTagCounts(note.tags);
@@ -99,11 +97,6 @@ export const wrappedNoteRepository = {
       Object.assign(fv, next);
       changedFields.push('tags');
     }
-    if (changedFields.length === 0) {
-      fv.updatedAt = (fv.updatedAt ?? 0) + 1;
-    } else {
-      fv.updatedAt = (fv.updatedAt ?? 0) + 1;
-    }
     const next: Note = {
       ...existing,
       ...patch,
@@ -115,7 +108,6 @@ export const wrappedNoteRepository = {
     if (patch.title !== undefined) fieldsPayload.title = patch.title;
     if (patch.content !== undefined) fieldsPayload.content = patch.content;
     if (patch.tags !== undefined) fieldsPayload.tags = nextTags;
-    fieldsPayload.updatedAt = t;
     await db.transaction('rw', db.notes, db.tags, db.outbox, async () => {
       await db.notes.put(next);
       enqueue({
@@ -144,7 +136,6 @@ export const wrappedNoteRepository = {
       const { next: fv2 } = bumpFieldVersion(fv, 'title');
       Object.assign(fv, fv2);
     }
-    fv.updatedAt = (fv.updatedAt ?? 0) + 1;
     const next: Note = { ...existing, content, title, updatedAt: t, fieldVersions: fv };
     await db.transaction('rw', db.notes, db.outbox, async () => {
       await db.notes.put(next);
@@ -154,7 +145,7 @@ export const wrappedNoteRepository = {
         clientTimestamp: t,
         fieldVersions: fv,
         changedFields: ['content', 'title'],
-        fields: { content, title, updatedAt: t }
+        fields: { content, title }
       });
     });
     return next;
@@ -167,7 +158,6 @@ export const wrappedNoteRepository = {
     const fv: FieldVersions = { ...(existing.fieldVersions ?? {}) };
     const { next } = bumpFieldVersion(fv, 'isPinned');
     Object.assign(fv, next);
-    fv.updatedAt = (fv.updatedAt ?? 0) + 1;
     await db.transaction('rw', db.notes, db.outbox, async () => {
       await db.notes.update(id, { isPinned: pinned, updatedAt: t, fieldVersions: fv });
       enqueue({
@@ -176,7 +166,7 @@ export const wrappedNoteRepository = {
         clientTimestamp: t,
         fieldVersions: fv,
         changedFields: ['isPinned'],
-        fields: { isPinned: pinned, updatedAt: t }
+        fields: { isPinned: pinned }
       });
     });
   },
@@ -188,7 +178,6 @@ export const wrappedNoteRepository = {
     const fv: FieldVersions = { ...(existing.fieldVersions ?? {}) };
     const { next } = bumpFieldVersion(fv, 'isArchived');
     Object.assign(fv, next);
-    fv.updatedAt = (fv.updatedAt ?? 0) + 1;
     await db.transaction('rw', db.notes, db.outbox, async () => {
       await db.notes.update(id, { isArchived: archived, updatedAt: t, fieldVersions: fv });
       enqueue({
@@ -197,7 +186,7 @@ export const wrappedNoteRepository = {
         clientTimestamp: t,
         fieldVersions: fv,
         changedFields: ['isArchived'],
-        fields: { isArchived: archived, updatedAt: t }
+        fields: { isArchived: archived }
       });
     });
   },
@@ -215,7 +204,6 @@ export const wrappedNoteRepository = {
     Object.assign(fv, fv1);
     const { next: fv2 } = bumpFieldVersion(fv, 'deletedAt');
     Object.assign(fv, fv2);
-    fv.updatedAt = (fv.updatedAt ?? 0) + 1;
     const deletedAt = t;
     await db.transaction('rw', db.notes, db.outbox, async () => {
       await db.notes.update(id, { isDeleted: true, deletedAt, updatedAt: t, fieldVersions: fv });
@@ -238,7 +226,6 @@ export const wrappedNoteRepository = {
     Object.assign(fv, fv1);
     const { next: fv2 } = bumpFieldVersion(fv, 'deletedAt');
     Object.assign(fv, fv2);
-    fv.updatedAt = (fv.updatedAt ?? 0) + 1;
     await db.transaction('rw', db.notes, db.outbox, async () => {
       await db.notes.update(id, { isDeleted: false, deletedAt: null, updatedAt: t, fieldVersions: fv });
       enqueue({
@@ -256,15 +243,13 @@ export const wrappedNoteRepository = {
     if (!existing) return;
     const t = now();
     const fv: FieldVersions = { ...(existing.fieldVersions ?? {}) };
-    fv.updatedAt = (fv.updatedAt ?? 0) + 1;
-    const tombstoneFV: FieldVersions = { ...fv };
     await db.transaction('rw', db.notes, db.outbox, async () => {
       await db.notes.delete(id);
       enqueue({
         kind: 'permDelete',
         noteId: id,
         clientTimestamp: t,
-        fieldVersions: tombstoneFV,
+        fieldVersions: fv,
         tombstone: true
       });
     });
@@ -272,16 +257,10 @@ export const wrappedNoteRepository = {
   },
 
   async emptyTrash(): Promise<number> {
-    let all: Note[];
-    try {
-      // @ts-expect-error: cast '1' to never for index-equals typed contract
-      all = await db.notes.where('isDeleted').equals(1).toArray();
-    } catch {
-      const rows = await db.notes.toArray();
-      all = rows.filter((n) => n.isDeleted);
-    }
+    const all = await db.notes.toArray();
+    const trashed = all.filter((n) => n.isDeleted);
     let n = 0;
-    for (const note of all) {
+    for (const note of trashed) {
       await this.permanentDelete(note.id);
       n++;
     }
@@ -306,7 +285,6 @@ export const wrappedNoteRepository = {
         const fv: FieldVersions = { ...(note.fieldVersions ?? {}) };
         const { next: fv1 } = bumpFieldVersion(fv, 'tags');
         Object.assign(fv, fv1);
-        fv.updatedAt = (fv.updatedAt ?? 0) + 1;
         await db.notes.update(note.id, { tags: dedup, updatedAt: t, fieldVersions: fv });
         affectedPayload.push({ noteId: note.id, fieldVersions: fv });
       }
@@ -342,7 +320,6 @@ export const wrappedNoteRepository = {
         const fv: FieldVersions = { ...(note.fieldVersions ?? {}) };
         const { next: fv1 } = bumpFieldVersion(fv, 'tags');
         Object.assign(fv, fv1);
-        fv.updatedAt = (fv.updatedAt ?? 0) + 1;
         await db.notes.update(note.id, { tags: nextTags, updatedAt: t, fieldVersions: fv });
         affectedPayload.push({ noteId: note.id, fieldVersions: fv });
       }
