@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { app } from '../state/appStore';
-import { noteRepository } from '../data/noteRepository';
+import { noteRepository } from '../data/wrappedNoteRepository';
 import { debounce } from '../domain/utils';
 import { IconBold, IconCode, IconHeading, IconItalic, IconLink, IconList, IconChecklist, IconQuote, IconPlus, IconPin, IconArchive, IconTrash, IconMore, IconUnarchive } from './icons';
 import { useOnClickOutside } from './useOnClickOutside';

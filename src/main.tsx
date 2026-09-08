@@ -4,6 +4,7 @@ import { App } from './App';
 import './styles/tokens.css';
 import './styles/app.css';
 import { registerSW } from 'virtual:pwa-register';
+import { bootSync } from './sync';
 
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   registerSW({ immediate: true });
@@ -16,3 +17,5 @@ createRoot(root).render(
     <App />
   </StrictMode>
 );
+
+void bootSync();

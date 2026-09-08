@@ -7,7 +7,8 @@ import { NoteList } from './ui/NoteList';
 import { NoteEditor } from './ui/NoteEditor';
 import { BottomNav, Toast, EmptyTrashButton } from './ui/BottomNav';
 import { Shortcuts } from './ui/Shortcuts';
-import { db } from './data/db';
+import { SyncStatusBar } from './ui/SyncStatusBar';
+import { engine } from './sync';
 
 export function App() {
   const ready = app((s) => s.ready);
@@ -28,6 +29,13 @@ export function App() {
     };
     window.addEventListener('unhandledrejection', onUnhandled);
     return () => window.removeEventListener('unhandledrejection', onUnhandled);
+  }, []);
+
+  useEffect(() => {
+    const unsub = engine.subscribe(() => {
+      void app.getState().refresh();
+    });
+    return unsub;
   }, []);
 
   if (!ready) {
@@ -91,6 +99,7 @@ export function App() {
           {editorPane}
         </div>
         <BottomNav />
+        <SyncStatusBar />
       </main>
       <CommandPalette />
       <Toast />

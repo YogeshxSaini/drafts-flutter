@@ -1,5 +1,6 @@
 import { create } from './createStore';
 import type { Note, NoteFilter, SortKey } from '../domain/types';
+import { wrappedNoteRepository } from '../data/wrappedNoteRepository';
 import { noteRepository } from '../data/noteRepository';
 import { noteQuery } from '../data/noteQuery';
 import { debounce } from '../domain/utils';
@@ -133,49 +134,49 @@ export const app = create<AppState>((set, get) => {
       set({ toast: null });
     },
     async createNote() {
-      const note = await noteRepository.create({ title: '', content: '', tags: [] });
+      const note = await wrappedNoteRepository.create({ title: '', content: '', tags: [] });
       set({ view: { kind: 'inbox' }, selectedId: note.id });
       await refresh();
       return note.id;
     },
     async pin(id: string, pinned: boolean) {
-      await noteRepository.pin(id, pinned);
+      await wrappedNoteRepository.pin(id, pinned);
       await refresh();
     },
     async archive(id: string) {
-      await noteRepository.archive(id, true);
+      await wrappedNoteRepository.archive(id, true);
       set({ selectedId: null });
       await refresh();
       get().showToast('Note archived', { label: 'Undo', run: () => void get().unarchive(id) });
     },
     async unarchive(id: string) {
-      await noteRepository.archive(id, false);
+      await wrappedNoteRepository.archive(id, false);
       await refresh();
     },
     async softDelete(id: string) {
-      await noteRepository.softDelete(id);
+      await wrappedNoteRepository.softDelete(id);
       set({ selectedId: null });
       await refresh();
       get().showToast('Moved to Trash', { label: 'Undo', run: () => void get().restore(id) });
     },
     async restore(id: string) {
-      await noteRepository.restore(id);
+      await wrappedNoteRepository.restore(id);
       set({ selectedId: id });
       await refresh();
     },
     async permanentDelete(id: string) {
-      await noteRepository.permanentDelete(id);
+      await wrappedNoteRepository.permanentDelete(id);
       set({ selectedId: null });
       await refresh();
     },
     async emptyTrash() {
-      await noteRepository.emptyTrash();
+      await wrappedNoteRepository.emptyTrash();
       set({ selectedId: null });
       await refresh();
       get().showToast('Emptied trash');
     },
     async renameTag(from: string, to: string) {
-      const n = await noteRepository.renameTag(from, to);
+      const n = await wrappedNoteRepository.renameTag(from, to);
       await refresh();
       get().showToast(`Renamed tag (${n} note${n === 1 ? '' : 's'})`);
     },
@@ -184,7 +185,7 @@ export const app = create<AppState>((set, get) => {
       if (view.kind === 'tag' && view.name === name) {
         set({ view: { kind: 'inbox' } });
       }
-      const n = await noteRepository.deleteTag(name);
+      const n = await wrappedNoteRepository.deleteTag(name);
       await refresh();
       get().showToast(`Removed tag from ${n} note${n === 1 ? '' : 's'}`);
     }
